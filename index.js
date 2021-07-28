@@ -254,13 +254,13 @@ function scrambleImage(url, callback) {
     let img = new Image()
     img.src = url;
     img.onload = function () {
-        // 設定 canvas 寬高等同圖片
+        // Set canvas size
         let ctx = canvas.getContext('2d');
         let w = img.width;
         let h = img.height;
         canvas.width = img.width;
         canvas.height = img.height;
-        // 重組繪製
+        // Repaint
         let num = 10;
         let remainder = parseInt(h % num);
         let copyW = w;
@@ -292,13 +292,13 @@ function unscrambleImage(url, callback) {
     let img = new Image()
     img.src = url;
     img.onload = function () {
-        // 設定 canvas 寬高等同圖片
+        // Set canvas size
         let ctx = canvas.getContext('2d');
         let w = img.width;
         let h = img.height;
         canvas.width = img.width;
         canvas.height = img.height;
-        // 重組繪製
+        // Repaint
         let num = 10;
         let remainder = parseInt(h % num);
         let copyW = w;
