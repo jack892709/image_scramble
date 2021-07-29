@@ -41,9 +41,9 @@ $('#startButton').on('click', function () {
     clearResults();
     // Start to process images
     processImages(filesUnprocessed);
-    document.getElementById('startButton').disabled = true;
+    $('#startButton').attr('disabled', false);
 
-    if (document.getElementById('checkShowResults').checked) {
+    if ($('#checkShowResults').attr('checked')) {
         $('#results').removeClass('d-none');
     }
 })
@@ -51,24 +51,23 @@ $('#startButton').on('click', function () {
 $('#downloadButton').on('click', function (event) {
 
     event.preventDefault();
-    document.getElementById('downloadButton').disabled = true;
+    $('#downloadButton').attr('disabled', true);
 
     let temporaryDownloadLink = document.createElement("a");
     temporaryDownloadLink.style.display = 'none';
     document.body.appendChild(temporaryDownloadLink);
 
-    // for( let i = 0; i < filesForDownload.length; i++ )
-    // {
-    //     setTimeout(function () {
-    //         let download = filesForDownload[i];
-    //         temporaryDownloadLink.setAttribute( 'href', download.path );
-    //         temporaryDownloadLink.setAttribute( 'download', download.name );
-    //         console.log('hi'+i);
-    //         temporaryDownloadLink.click();
-    //     }, 500*n)
+    downloadProgress.initializeProgress(filesForDownload.length);
+
+    // for (let i = 0; i < filesForDownload.length; i++) {
+    //     setTimeout(function (n) {
+    //         downloadImageN(n);
+    //         if (downloadProgress.isCompleted) {
+    //             $('#downloadButton').attr('disabled', false);
+    //         }
+    //     }, downloadTimeInterval * i, i)
     // }
 
-    downloadProgress.initializeProgress(filesForDownload.length);
     let n = 0;
     let interval = setInterval(function () {
         downloadImageN(n);
@@ -77,7 +76,7 @@ $('#downloadButton').on('click', function (event) {
             clearInterval(interval);
         }
         if (downloadProgress.isCompleted) {
-            document.getElementById('downloadButton').disabled = false;
+            $('#downloadButton').attr('disabled', false);
         }
     }, downloadTimeInterval);
 
@@ -85,7 +84,6 @@ $('#downloadButton').on('click', function (event) {
         let download = filesForDownload[n];
         temporaryDownloadLink.setAttribute('href', download.path);
         temporaryDownloadLink.setAttribute('download', download.name);
-        console.log('hi' + n);
         temporaryDownloadLink.click();
         downloadProgress.tick();
     }
@@ -114,7 +112,6 @@ class TrackProgress {
         this.percentage = (this.count / this.taskSum * 100).toFixed(0);
         this.progressBar.width(this.percentage + '%');
         this.progressBar.text(this.percentage + '%');
-        console.log(this.count + ':' + this.percentage);
         if (this.count === this.taskSum) this.completed = true;
     }
 
@@ -126,7 +123,7 @@ let transformProgress = new TrackProgress($('#transformProgress'));
 let downloadProgress = new TrackProgress($('#downloadProgress'));
 
 function initializeComponentState() {
-    document.getElementById('startButton').disabled = false;
+    $('#startButton').attr('disabled', false);
     $('#transformProgress').width('0%');
     $('#transformProgress').text('0%');
     $('#downloadProgress').width('0%');
@@ -203,7 +200,7 @@ function processImagePromise(file) {
 
         let url = URL.createObjectURL(file);
 
-        switch (document.getElementById('action').value.toUpperCase()) {
+        switch ($('#action').val().toUpperCase()) {
             case 'SCRAMBLE': {
                 scrambleImage(url, function (result) {
                     storeImage(result, file.name);
@@ -235,8 +232,8 @@ function storeImage(url, fileName) {
     let newImg = document.createElement('img');
     newImg.classList.add('img-fluid');
     newImg.src = url;
-    if (document.getElementById('checkShowResults').checked) {
-        document.getElementById('results').appendChild(newImg);
+    if ($('#checkShowResults').attr('checked')) {
+        $('#results').append(newImg);
     }
 }
 
@@ -265,11 +262,13 @@ function scrambleImage(url, callback) {
         let remainder = parseInt(h % num);
         let copyW = w;
         for (let i = 0; i < num; i++) {
-            let copyH = Math.floor(h / num);
-            let py = copyH * (i);
-            let y = h - (copyH * (i + 1)) - remainder;
-            if (i == 0) { copyH = copyH + remainder; }
-            else { py = py + remainder; }
+            var copyH = Math.floor(h / num);
+            var py = h - copyH * (i + 1) - remainder;
+            var y = copyH * (i) + remainder;
+            if (i == 0) {
+                copyH = copyH + remainder;
+                y = 0;
+            }
             ctx.drawImage(img, 0, y, copyW, copyH, 0, py, copyW, copyH);
         }
 
@@ -285,7 +284,7 @@ function scrambleImage(url, callback) {
  * @param {callback} callback return the processed image url through callback
  * @returns {}
  */
-function unscrambleImage(url, callback) {
+ function unscrambleImage(url, callback) {
 
     let canvas;
     canvas = document.createElement('canvas');
@@ -303,13 +302,11 @@ function unscrambleImage(url, callback) {
         let remainder = parseInt(h % num);
         let copyW = w;
         for (let i = 0; i < num; i++) {
-            var copyH = Math.floor(h / num);
-            var py = h - copyH * (i + 1) - remainder;
-            var y = copyH * (i) + remainder;
-            if (i == 0) {
-                copyH = copyH + remainder;
-                y = 0;
-            }
+            let copyH = Math.floor(h / num);
+            let py = copyH * (i);
+            let y = h - (copyH * (i + 1)) - remainder;
+            if (i == 0) { copyH = copyH + remainder; }
+            else { py = py + remainder; }
             ctx.drawImage(img, 0, y, copyW, copyH, 0, py, copyW, copyH);
         }
 
