@@ -3,120 +3,127 @@ let filesForDownload = [];
 const quality = 0.75;
 const downloadTimeInterval = 300;
 
-$('#action').on('change', function () {
+$(function() {
 
-    $('#before img').appendTo($('#garage'));
-    $('#after img').appendTo($('#garage'));
+    $('#action').on('change', function () {
 
-    switch ($('#action').val().toUpperCase()) {
-        case 'SCRAMBLE': {
+        $('#before img').appendTo($('#garage'));
+        $('#after img').appendTo($('#garage'));
 
-            $('#garage #example_original').appendTo($('#before'));
-            $('#garage #example_stripped').appendTo($('#after'));
-            break;
+        switch ($('#action').val().toUpperCase()) {
+            case 'SCRAMBLE': {
+
+                $('#garage #example_original').appendTo($('#before'));
+                $('#garage #example_stripped').appendTo($('#after'));
+                break;
+            }
+            case 'UNSCRAMBLE': {
+                $('#garage #example_original').appendTo($('#after'));
+                $('#garage #example_stripped').appendTo($('#before'));
+                break;
+            }
         }
-        case 'UNSCRAMBLE': {
-            $('#garage #example_original').appendTo($('#after'));
-            $('#garage #example_stripped').appendTo($('#before'));
-            break;
+    })
+
+    $('#fileLoader').on('change', function (event) {
+
+        filesUnprocessed = event.currentTarget.files;
+        // Abort if there were no files selected
+        if (!filesUnprocessed.length) return;
+
+        initializeComponentState();
+    });
+
+    $('#startButton').on('click', function () {
+        // processData(filesUnprocessed);
+        // processImage(filesUnprocessed[0]); //OK
+        // processImagePromise(filesUnprocessed[0]);
+
+        // Clear previous data
+        clearResults();
+        // Start to process images
+        processImages(filesUnprocessed);
+        $('#startButton').attr('disabled', false);
+
+        if ($('#checkShowResults').attr('checked')) {
+            $('#results').removeClass('d-none');
         }
-    }
+    })
+
+    $('#downloadButton').on('click', function (event) {
+
+        event.preventDefault();
+        $('#downloadButton').attr('disabled', true);
+
+        let temporaryDownloadLink = document.createElement("a");
+        temporaryDownloadLink.style.display = 'none';
+        document.body.appendChild(temporaryDownloadLink);
+
+        downloadProgress.initializeProgress(filesForDownload.length);
+
+        // for (let i = 0; i < filesForDownload.length; i++) {
+        //     setTimeout(function (n) {
+        //         downloadImageN(n);
+        //         if (downloadProgress.isCompleted) {
+        //             $('#downloadButton').attr('disabled', false);
+        //         }
+        //     }, downloadTimeInterval * i, i)
+        // }
+
+        let n = 0;
+        let interval = setInterval(function () {
+            downloadImageN(n);
+            n++;
+            if (n === filesForDownload.length) {
+                clearInterval(interval);
+            }
+            if (downloadProgress.isCompleted) {
+                $('#downloadButton').attr('disabled', false);
+            }
+        }, downloadTimeInterval);
+
+        function downloadImageN(n) {
+            let download = filesForDownload[n];
+            temporaryDownloadLink.setAttribute('href', download.path);
+            temporaryDownloadLink.setAttribute('download', download.name);
+            temporaryDownloadLink.click();
+            downloadProgress.tick();
+        }
+
+        document.body.removeChild(temporaryDownloadLink);
+    });
+
 })
-
-$('#fileLoader').on('change', function (event) {
-
-    filesUnprocessed = event.currentTarget.files;
-    // Abort if there were no files selected
-    if (!filesUnprocessed.length) return;
-
-    initializeComponentState();
-});
-
-$('#startButton').on('click', function () {
-    // processData(filesUnprocessed);
-    // processImage(filesUnprocessed[0]); //OK
-    // processImagePromise(filesUnprocessed[0]);
-
-    // Clear previous data
-    clearResults();
-    // Start to process images
-    processImages(filesUnprocessed);
-    $('#startButton').attr('disabled', false);
-
-    if ($('#checkShowResults').attr('checked')) {
-        $('#results').removeClass('d-none');
-    }
-})
-
-$('#downloadButton').on('click', function (event) {
-
-    event.preventDefault();
-    $('#downloadButton').attr('disabled', true);
-
-    let temporaryDownloadLink = document.createElement("a");
-    temporaryDownloadLink.style.display = 'none';
-    document.body.appendChild(temporaryDownloadLink);
-
-    downloadProgress.initializeProgress(filesForDownload.length);
-
-    // for (let i = 0; i < filesForDownload.length; i++) {
-    //     setTimeout(function (n) {
-    //         downloadImageN(n);
-    //         if (downloadProgress.isCompleted) {
-    //             $('#downloadButton').attr('disabled', false);
-    //         }
-    //     }, downloadTimeInterval * i, i)
-    // }
-
-    let n = 0;
-    let interval = setInterval(function () {
-        downloadImageN(n);
-        n++;
-        if (n === filesForDownload.length) {
-            clearInterval(interval);
-        }
-        if (downloadProgress.isCompleted) {
-            $('#downloadButton').attr('disabled', false);
-        }
-    }, downloadTimeInterval);
-
-    function downloadImageN(n) {
-        let download = filesForDownload[n];
-        temporaryDownloadLink.setAttribute('href', download.path);
-        temporaryDownloadLink.setAttribute('download', download.name);
-        temporaryDownloadLink.click();
-        downloadProgress.tick();
-    }
-
-    document.body.removeChild(temporaryDownloadLink);
-});
-
 class TrackProgress {
     constructor(barElement) {
-        this.progressBar = barElement;
-        this.taskSum = 0;
-        this.count = 0;
-        this.percentage = 0;
-        this.completed = false;
-    }
 
-    initializeProgress(totalTasks) {
-        this.taskSum = totalTasks;
-        this.count = 0;
-        this.percentage = 0;
-        this.completed = false;
-    }
+        let progressBar = barElement;
+        let taskSum = 0;
+        let count = 0;
+        let percentage = 0;
+        let completed = false;
 
-    tick() {
-        this.count++;
-        this.percentage = (this.count / this.taskSum * 100).toFixed(0);
-        this.progressBar.width(this.percentage + '%');
-        this.progressBar.text(this.percentage + '%');
-        if (this.count === this.taskSum) this.completed = true;
-    }
+        this.initializeProgress = (totalTasks) => {
+            taskSum = totalTasks;
+            count = 0;
+            percentage = 0;
+            completed = false;
+            progressBar.width('0%');
+            progressBar.text('0%');
+        };
 
-    isCompleted() {
-        return this.completed;
+        this.tick = () => {
+            count++;
+            percentage = (count / taskSum * 100).toFixed(0);
+            progressBar.width(percentage + '%');
+            progressBar.text(percentage + '%');
+            if (count === taskSum)
+                completed = true;
+        };
+
+        this.isCompleted = () => {
+            return completed;
+        };
     }
 }
 let transformProgress = new TrackProgress($('#transformProgress'));
@@ -284,7 +291,7 @@ function scrambleImage(url, callback) {
  * @param {callback} callback return the processed image url through callback
  * @returns {}
  */
- function unscrambleImage(url, callback) {
+function unscrambleImage(url, callback) {
 
     let canvas;
     canvas = document.createElement('canvas');
